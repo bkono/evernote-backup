@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+from pathlib import Path
 from typing import Optional
 
 from evernote_backup.cli_app_auth import get_auth_token, get_sync_client
@@ -19,11 +20,12 @@ logger = logging.getLogger(__name__)
 
 
 def init_db(
-    database: str,
+    database: Path,
     auth_user: Optional[str],
     auth_password: Optional[str],
     auth_is_oauth: bool,
     auth_oauth_port: int,
+    auth_oauth_host: str,
     auth_token: Optional[str],
     force: bool,
     backend: str,
@@ -38,6 +40,7 @@ def init_db(
             auth_password,
             auth_is_oauth,
             auth_oauth_port,
+            auth_oauth_host,
             backend,
             network_retry_count,
         )
@@ -58,11 +61,12 @@ def init_db(
 
 
 def reauth(
-    database: str,
+    database: Path,
     auth_user: Optional[str],
     auth_password: Optional[str],
     auth_is_oauth: bool,
     auth_oauth_port: int,
+    auth_oauth_host: str,
     auth_token: Optional[str],
     network_retry_count: int,
 ) -> None:
@@ -78,6 +82,7 @@ def reauth(
             auth_password,
             auth_is_oauth,
             auth_oauth_port,
+            auth_oauth_host,
             backend,
             network_retry_count,
         )
@@ -98,9 +103,10 @@ def reauth(
 
 
 def sync(
-    database: str,
+    database: Path,
     max_chunk_results: int,
     max_download_workers: int,
+    download_cache_memory_limit: int,
     network_retry_count: int,
 ) -> None:
     storage = get_storage(database)
@@ -114,7 +120,9 @@ def sync(
         auth_token, backend, network_retry_count, max_chunk_results
     )
 
-    note_synchronizer = NoteSynchronizer(note_client, storage, max_download_workers)
+    note_synchronizer = NoteSynchronizer(
+        note_client, storage, max_download_workers, download_cache_memory_limit
+    )
 
     try:
         note_synchronizer.sync()
@@ -128,19 +136,28 @@ def sync(
 
 
 def export(
-    database: str,
+    database: Path,
     single_notes: bool,
     include_trash: bool,
-    output_path: str,
+    no_export_date: bool,
+    overwrite: bool,
+    output_path: Path,
 ) -> None:
     storage = get_storage(database)
 
     raise_on_old_database_version(storage)
 
-    exporter = NoteExporter(storage, output_path)
+    exporter = NoteExporter(
+        storage=storage,
+        target_dir=output_path,
+        single_notes=single_notes,
+        export_trash=include_trash,
+        no_export_date=no_export_date,
+        overwrite=overwrite,
+    )
 
     try:
-        exporter.export_notebooks(single_notes, include_trash)
+        exporter.export_notebooks()
     except NothingToExportError:
         raise ProgramTerminatedError(
             "Database is empty, nothing to export."

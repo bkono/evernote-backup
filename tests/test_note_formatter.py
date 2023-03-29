@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from evernote.edam.type.ttypes import (
     Data,
     Note,
@@ -6,6 +8,7 @@ from evernote.edam.type.ttypes import (
     ResourceAttributes,
 )
 
+from evernote_backup import note_formatter_util
 from evernote_backup.note_formatter import NoteFormatter
 
 test_note_data = Note(
@@ -159,3 +162,27 @@ def test_formatter_xml_note():
     formatted_note = formatter.format_note(test_xml_note)
 
     assert formatted_note == expected_xml_note
+
+
+def test_note_from_future(mocker):
+    formatter = NoteFormatter()
+
+    # 9999-12-31 23:59:59
+    end_of_times = 253402300799999
+
+    # Emulate windows limit
+    mock_timestamp = mocker.patch(
+        "evernote_backup.note_formatter_util._get_max_timestamp"
+    )
+    mock_timestamp.return_value = 32503748400
+
+    note_from_future = Note(
+        title="test",
+        created=end_of_times,
+        updated=end_of_times,
+    )
+
+    formatted_note = formatter.format_note(note_from_future)
+
+    assert "<created>99991231T235959Z</created>" in formatted_note
+    assert "<updated>99991231T235959Z</updated>" in formatted_note

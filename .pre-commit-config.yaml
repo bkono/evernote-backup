@@ -12,22 +12,10 @@ repos:
     -   id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
     -   id: mixed-line-ending
+        args: ['--fix=lf']
     -   id: check-toml
     -   id: check-yaml
     -   id: no-commit-to-branch
-
--   repo: https://github.com/executablebooks/mdformat
-    rev: 0.7.3  # Use the ref you want to point at
-    hooks:
-    -   id: mdformat
-    #    additional_dependencies:
-    #    - mdformat-gfm
-
--   repo: https://github.com/commitizen-tools/commitizen
-    rev: v2.17.2
-    hooks:
-    -   id: commitizen
-        stages: [commit-msg]
 
 -   repo: local
     hooks:
@@ -45,12 +33,12 @@ repos:
         entry: poetry run black
         types: [python]
 
-    -   id: flakehell
-        name: flakehell
+    -   id: mdformat
+        name: mdformat
         stages: [commit]
         language: system
-        entry: poetry run flakehell lint
-        types: [python]
+        entry: poetry run mdformat
+        types: [markdown]
 
     -   id: pytest
         name: pytest

@@ -1,11 +1,14 @@
-from datetime import datetime
+import logging
 from typing import Optional
 
 from evernote_backup.cli_app_auth_oauth import evernote_login_oauth
 from evernote_backup.cli_app_auth_password import evernote_login_password
-from evernote_backup.cli_app_util import ProgramTerminatedError, logger
+from evernote_backup.cli_app_util import ProgramTerminatedError
 from evernote_backup.evernote_client_sync import EvernoteClientSync
 from evernote_backup.evernote_client_util import EvernoteAuthError
+from evernote_backup.token_util import get_token_expiration_date
+
+logger = logging.getLogger(__name__)
 
 
 def get_sync_client(
@@ -41,13 +44,14 @@ def get_auth_token(
     auth_password: Optional[str],
     auth_is_oauth: bool,
     auth_oauth_port: int,
+    auth_oauth_host: str,
     backend: str,
     network_retry_count: int,
 ) -> str:
     logger.info("Logging in to Evernote...")
 
     if auth_is_oauth:
-        return evernote_login_oauth(backend, auth_oauth_port)
+        return evernote_login_oauth(backend, auth_oauth_port, auth_oauth_host)
 
     return evernote_login_password(
         auth_user,
@@ -55,11 +59,3 @@ def get_auth_token(
         backend,
         network_retry_count,
     )
-
-
-def get_token_expiration_date(token: str) -> datetime:
-    hex_base = 16
-    token_parts = token.split(":")
-    token_expire_ts = int(token_parts[2][2:], base=hex_base) // 1000
-
-    return datetime.utcfromtimestamp(token_expire_ts)

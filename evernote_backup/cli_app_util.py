@@ -1,13 +1,10 @@
 import base64
 import io
-import logging
 import os
 import sys
 from typing import Iterable, Iterator, List, Optional, Sequence, TextIO
 
 import click
-
-logger = logging.getLogger(__name__)
 
 
 class ProgramTerminatedError(Exception):
@@ -26,7 +23,9 @@ def unscramble(scrambled_data: bytes) -> List[str]:
 
 
 def get_progress_output() -> Optional[TextIO]:
-    if not is_console_interactive():
+    is_verbose_mode = click.get_current_context().find_root().params["verbose"]
+
+    if not is_console_interactive() or is_verbose_mode:
         return io.StringIO()
 
     return None
